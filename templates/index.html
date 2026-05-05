@@ -1,118 +1,36 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RandomCar AI | Terminal de Diagnóstico</title>
-    <style>
-        body {
-            background-color: #0a0a0a;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-        header {
-            background: #151515;
-            border-bottom: 3px solid #ff4500;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 0 15px rgba(255, 69, 0, 0.4);
-        }
-        #chat-box {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .msg {
-            max-width: 80%;
-            padding: 12px 18px;
-            border-radius: 10px;
-            line-height: 1.5;
-        }
-        .ai {
-            align-self: flex-start;
-            background: #1a1a1a;
-            border-left: 4px solid #ff4500;
-        }
-        .user {
-            align-self: flex-end;
-            background: #ff4500;
-            color: white;
-            font-weight: 500;
-        }
-        .input-area {
-            background: #151515;
-            padding: 20px;
-            display: flex;
-            gap: 10px;
-            border-top: 1px solid #333;
-        }
-        input {
-            flex: 1;
-            background: #000;
-            border: 1px solid #ff4500;
-            color: white;
-            padding: 12px;
-            border-radius: 5px;
-            outline: none;
-        }
-        button {
-            background: #ff4500;
-            color: white;
-            border: none;
-            padding: 0 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        button:hover { background: #e63e00; }
-    </style>
-</head>
-<body>
-    <header>
-        <h1 style="margin:0; font-size: 1.5rem;">⚙️ RANDOMCAR AI: DIAGNÓSTICO</h1>
-    </header>
-    <div id="chat-box">
-        <div class="msg ai">SISTEMA ACTIVO. ¿Qué ruido o falla presenta el vehículo, ingeniero?</div>
-    </div>
-    <div class="input-area">
-        <input type="text" id="userInput" placeholder="Ej: Mi carro vibra al frenar..." autocomplete="off">
-        <button onclick="enviar()">ANALIZAR</button>
-    </div>
+<!-- Solo reemplaza la sección <script> de tu index.html -->
+<script>
+    async function enviar() {
+        const input = document.getElementById('userInput');
+        const chatBox = document.getElementById('chat-box');
+        if (!input.value.trim()) return;
 
-    <script>
-        async function enviar() {
-            const input = document.getElementById('userInput');
-            const chatBox = document.getElementById('chat-box');
-            if (!input.value.trim()) return;
+        const text = input.value;
+        chatBox.innerHTML += `<div class="msg user">${text}</div>`;
+        input.value = '';
+        
+        // Indicador de carga
+        const loadingId = "load-" + Date.now();
+        chatBox.innerHTML += `<div class="msg ai" id="${loadingId}"><i>Analizando sistemas...</i></div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
 
-            const text = input.value;
-            chatBox.innerHTML += `<div class="msg user">${text}</div>`;
-            input.value = '';
+        try {
+            const res = await fetch('/ask', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: text})
+            });
+            const data = await res.json();
+            
+            // Reemplazar el indicador de carga con la respuesta real
+            document.getElementById(loadingId).innerText = data.response;
             chatBox.scrollTop = chatBox.scrollHeight;
-
-            try {
-                const res = await fetch('/ask', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({message: text})
-                });
-                const data = await res.json();
-                chatBox.innerHTML += `<div class="msg ai">${data.response}</div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (e) {
-                chatBox.innerHTML += `<div class="msg ai">Error de conexión con el núcleo.</div>`;
-            }
+        } catch (e) {
+            document.getElementById(loadingId).innerText = "Error crítico de conexión con el núcleo.";
         }
-        document.getElementById('userInput').addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') enviar();
-        });
-    </script>
-</body>
-</html>
+    }
+
+    document.getElementById('userInput').addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') enviar();
+    });
+</script>
