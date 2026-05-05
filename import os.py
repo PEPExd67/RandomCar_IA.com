@@ -3,41 +3,42 @@ from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
 from dotenv import load_dotenv
 
+# Cargar variables
 load_dotenv()
 
-# Configuración de la API
+# Configuración de la API de Google
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# Intentamos con el nombre de modelo más específico
-# Si este falla, prueba cambiando a "gemini-1.5-pro" solo para testear
-MODEL_NAME = "gemini-1.5-flash-latest" 
+# Usar el modelo gemini-1.5-flash directamente
+model = genai.GenerativeModel("gemini-1.5-flash")
 
-model = genai.GenerativeModel(model_name=MODEL_NAME)
-
-app = Flask(__name__, template_folder='templates')
+# --- EL CAMBIO ESTÁ AQUÍ ---
+# Al no poner 'template_folder', Flask busca por defecto la carpeta 'templates'
+app = Flask(__name__)
 
 @app.route('/')
-def home():
-    return render_template('index.html')
+def index():
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        # Si falla, nos dirá exactamente dónde buscó
+        return f"Error: No se encontró index.html. Detalle: {e}", 500
 
 @app.route('/ask', methods=['POST'])
 def ask():
     try:
         data = request.get_json()
-        mensaje = data.get("message")
+        user_message = data.get("message")
         
-        # Usamos la función más básica de generación
-        response = model.generate_content(mensaje)
+        if not user_message:
+            return jsonify({"response": "Por favor, describe el problema."}), 400
+
+        # Respuesta de la IA
+        response = model.generate_content(user_message)
         
-        if response.text:
-            return jsonify({"response": response.text})
-        else:
-            return jsonify({"response": "La IA no devolvió texto. Revisa tu cuota en Google AI Studio."})
-            
+        return jsonify({"response": response.text})
     except Exception as e:
-        print(f"ERROR DETECTADO: {str(e)}")
-        # Si sigue dando 404, este mensaje te lo confirmará en la pantalla
-        return jsonify({"response": f"Error del motor (404): {str(e)}. Intenta cambiar el nombre del modelo en el código."}), 500
+        return jsonify({"response": f"Error del sistema: {str(e)}"}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
