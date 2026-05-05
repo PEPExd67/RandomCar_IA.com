@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RandomCar AI | Core</title>
+    <style>
+        :root {
+            --primary: #ff4500;
+            --bg: #0a0b0c;
+            --card: #16181a;
+            --text: #e1e1e1;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            padding: 20px 40px;
+            border-bottom: 1px solid #2d2f31;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status { color: #10b981; font-size: 0.8rem; font-weight: bold; }
+
+        #chat-container {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .msg {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 15px;
+            line-height: 1.5;
+        }
+
+        .ai { background: var(--card); border-left: 4px solid var(--primary); align-self: flex-start; }
+        .user { background: var(--primary); color: white; align-self: flex-end; }
+
+        .input-area {
+            padding: 30px;
+            background: #111315;
+            display: flex;
+            justify-content: center;
+        }
+
+        .input-box {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            gap: 10px;
+            background: #1c1f22;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+            padding: 10px;
+        }
+
+        button {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2 style="margin:0; font-size: 1.2rem;">RANDOMCAR <span style="font-weight:300">AI</span></h2>
+    <div class="status">● SISTEMA ONLINE</div>
+</header>
+
+<div id="chat-container">
+    <div class="msg ai">Bienvenido al núcleo de diagnóstico. Describa la falla mecánica para iniciar el escaneo.</div>
+</div>
+
+<div class="input-area">
+    <div class="input-box">
+        <input type="text" id="userInput" placeholder="Ej: El motor pierde potencia a 3000 RPM...">
+        <button onclick="enviar()">ANALIZAR</button>
+    </div>
+</div>
+
+<script>
+    async function enviar() {
+        const input = document.getElementById('userInput');
+        const container = document.getElementById('chat-container');
+        if (!input.value) return;
+
+        const texto = input.value;
+        container.innerHTML += `<div class="msg user">${texto}</div>`;
+        input.value = "";
+
+        const tempAi = document.createElement('div');
+        tempAi.className = "msg ai";
+        tempAi.innerText = "Analizando telemetría...";
+        container.appendChild(tempAi);
+        container.scrollTop = container.scrollHeight;
+
+        try {
+            const res = await fetch('/ask', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: texto})
+            });
+            const data = await res.json();
+            tempAi.innerText = data.response;
+        } catch (e) {
+            tempAi.innerText = "Error de conexión con el núcleo.";
+        }
+        container.scrollTop = container.scrollHeight;
+    }
+</script>
+
+</body>
+</html>
