@@ -39,4 +39,8 @@ def ask():
     return jsonify({"response": response.text})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    import os
+    # Render asigna un puerto dinámicamente, esto lo detecta
+    port = int(os.environ.get('PORT', 5000))
+    # host='0.0.0.0' le dice a Flask que sea visible en internet
+    app.run(host='0.0.0.0', port=port)
