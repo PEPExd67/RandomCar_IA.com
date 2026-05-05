@@ -3,39 +3,41 @@ from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
 load_dotenv()
 
-# Configuración de la API con el nombre de modelo corregido
+# Configuración de la API
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# Cambiamos a 'models/gemini-1.5-flash' para que la API lo reconozca
-model = genai.GenerativeModel("models/gemini-1.5-flash")
+# Intentamos con el nombre de modelo más específico
+# Si este falla, prueba cambiando a "gemini-1.5-pro" solo para testear
+MODEL_NAME = "gemini-1.5-flash-latest" 
 
-app = Flask(__name__)
+model = genai.GenerativeModel(model_name=MODEL_NAME)
+
+app = Flask(__name__, template_folder='templates')
 
 @app.route('/')
 def home():
-    # Flask buscará automáticamente en tu carpeta 'templates'
     return render_template('index.html')
 
 @app.route('/ask', methods=['POST'])
 def ask():
     try:
         data = request.get_json()
-        mensaje_usuario = data.get("message")
+        mensaje = data.get("message")
         
-        if not mensaje_usuario:
-            return jsonify({"response": "Por favor, escribe algo."}), 400
-
-        # Respuesta de la IA
-        response = model.generate_content(mensaje_usuario)
+        # Usamos la función más básica de generación
+        response = model.generate_content(mensaje)
         
-        return jsonify({"response": response.text})
-    
+        if response.text:
+            return jsonify({"response": response.text})
+        else:
+            return jsonify({"response": "La IA no devolvió texto. Revisa tu cuota en Google AI Studio."})
+            
     except Exception as e:
-        print(f"Error en el servidor: {e}")
-        return jsonify({"response": f"Hubo un problema técnico: {str(e)}"}), 500
+        print(f"ERROR DETECTADO: {str(e)}")
+        # Si sigue dando 404, este mensaje te lo confirmará en la pantalla
+        return jsonify({"response": f"Error del motor (404): {str(e)}. Intenta cambiar el nombre del modelo en el código."}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
